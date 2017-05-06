@@ -47,11 +47,15 @@ SECTIONS
     KEEP (*(.vectors))
     *(.text .text.* .gnu.linkonce.t*)
     *(.gnu.warning)
-  } > flash
+  } > flash_tx
+/* The default "flash" region was replaced in this case by the
+   "flash_tx". Since the LPC4337 microcontroller has two non-
+   contiguous flash banks, code (.text) seccions will be placed
+   in one of the banks. */
 
-  .ARM.extab   : { *(.ARM.extab* .gnu.linkonce.armextab.*) } > flash
+  .ARM.extab   : { *(.ARM.extab* .gnu.linkonce.armextab.*) } > flash_ro
   PROVIDE_HIDDEN (__exidx_start = .);
-  .ARM.exidx   : { *(.ARM.exidx* .gnu.linkonce.armexidx.*) } > flash
+  .ARM.exidx   : { *(.ARM.exidx* .gnu.linkonce.armexidx.*) } > flash_ro
   PROVIDE_HIDDEN (__exidx_end = .);
 
   .rodata :
@@ -60,7 +64,11 @@ SECTIONS
     *(.rodata .rodata.* .gnu.linkonce.r*)
     . = ALIGN(0x4);
     __rom_end = .;
-  } > flash
+  } > flash_ro
+/* The default "flash" region was replaced in this case by the
+   "flash_ro". Since the LPC4337 microcontroller has two non-
+   contiguous flash banks, read-only data (.rodata) will be
+   placed in one of the banks. */
 
   __data_load = __rom_end;
   .data : AT (__data_load)
@@ -77,22 +85,6 @@ SECTIONS
     __data_end = .;
   } > sram_da
   __data_words = (__data_end - __data_start) >> 2;
-
-  __ccmdata_load = __rom_end + (__data_words << 2);
-  .ccmdata : AT (__ccmdata_load)
-  {
-    __ccmdata_start = .;
-    *(.ccmdata .ccmdata.*)
-
-    /* Ensure that the end of the data section is always word aligned.
-       Initial values are stored in 4-bytes blocks so we must guarantee
-       that these blocks do not fall out the section (otherwise they are
-       truncated and the initial data for the last block are lost). */
-
-    . = ALIGN(0x4);
-    __ccmdata_end = .;
-  } > ccm_da
-  __ccmdata_words = (__ccmdata_end - __ccmdata_start) >> 2;
 
   .bss (NOLOAD): {
    . = ALIGN(0x8);
