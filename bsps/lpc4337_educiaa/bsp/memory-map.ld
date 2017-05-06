@@ -30,13 +30,49 @@
 
 MEMORY
 {
-  flash   (rx) : ORIGIN = 0x08000000, LENGTH = 1024K
-  sram12 (rwx) : ORIGIN = 0x20000000, LENGTH = 128K
-  ccm     (rw) : ORIGIN = 0x10000000, LENGTH = 64K
+  flash_bank_a (rx)		: ORIGIN = 0x1A000000, LENGTH = 512K
+  flash_bank_b (rx)		: ORIGIN = 0x1B000000, LENGTH = 512K
+  local_sram_32k (rwx) 		: ORIGIN = 0x10000000, LENGTH = 32K
+  local_sram_40k (rwx) 		: ORIGIN = 0x10080000, LENGTH = 40K
+  ahb_sram_64k (rwx)		: ORIGIN = 0x20000000, LENGTH = 64K
+  //ahb_sram_32k (rwx) 		: ORIGIN = 0x20000000, LENGTH = 32K
+  //ahb_sram_16k (rwx) 		: ORIGIN = 0x20008000, LENGTH = 16K
+  //ahb_sram_etb_16k (rwx)	: ORIGIN = 0x2000C000, LENGTH = 16K
 }
 
-REGION_ALIAS("sram_tx", sram12)
-REGION_ALIAS("sram_ro", sram12)
-REGION_ALIAS("sram_bs", sram12)
-REGION_ALIAS("sram_da", sram12)
-REGION_ALIAS("ccm_da", ccm)
+REGION_ALIAS("flash_tx", flash_bank_a)
+REGION_ALIAS("flash_ro", flash_bank_b)
+REGION_ALIAS("sram_tx", ahb_sram_64k)
+REGION_ALIAS("sram_ro", ahb_sram_64k)
+REGION_ALIAS("sram_bs", local_sram_32k)
+REGION_ALIAS("sram_da", local_sram_40k)
+
+
+/****************************************************************************
+*                                                                           *
+* The LPC4337 microcontroller has a total flash memory of 1Mb split into    *
+* two non-contiguous banks A and B of 512KB each. The GNU linker can't      *
+* assign a single output section to two diferent memory regions. That is    *
+* why only bank A is used for code (.text) for now, while bank B is used    *
+* for read-only data (.rodata).                                             *
+*                                                                           *
+* On the other hand the LPC4337 microcontroller has a total 136KB of sram   *
+* momory split between 3 non-contiguous regions of memory. A local 32KB     *
+* region, a local 40KB region whose top 8KB are retained during power-down  *
+* mode and an ahb accesible 4x16KB region whose bottom 16KB are also used   *
+* as the embedded trace buffer (ETB) for storing trace information. So if   *
+* the ETB is configured, these bottom 16KB can't be used as normal sram.    *
+* Again due to the GNU Linker's inability place a single output section     *
+* into two non-contiguous memory regions each output section in placed in   *
+* one memory region or the other. Additionally when loading the program     *
+* into RAM (using common-RAM.ld linker script) code (.text) and read-only   *
+* (.rodata) output sections need to be assinged to sram memory regions as   *
+* well. Since ETB is not being used and the ahb 4x16KB region is the        *
+* largest sram region, when running programs from RAM, the ahb_sram_64k     *
+* is used for loading code and read-only data. In case ETB needs to be used *
+* the alternate definition of the ahb memory (commented out) can be used.   *
+* The uninitialized data (.bss) section is placed in the local_sram_32k     *
+* region, while the data (.data) section is placed int the local_sram_40k   *
+* region.                                                                   *
+*                                                                           *
+*****************************************************************************/
