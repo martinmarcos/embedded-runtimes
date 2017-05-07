@@ -1,6 +1,6 @@
-../../bsps/stm32f4/bsp
+../../bsps/lpc4337_educiaa/bsp
 ../../base_runtimes/ravenscar-sfp/arch
 ../../base_runtimes/ravenscar-sfp/common
-../../bsps/stm32f4/gnarl-bsp
+../../bsps/lpc4337_educiaa/gnarl-bsp
 ../../base_runtimes/ravenscar-sfp/gnarl-common
-../../base_runtimes/ravenscar-sfp/gnarl-arch-stm32
+../../base_runtimes/ravenscar-sfp/gnarl-arch-lpc43

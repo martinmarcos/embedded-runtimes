@@ -23,7 +23,7 @@ project Runtime_Build is
          for Library_Dir use "sfp/adalib";
          for Object_Dir use "sfp/obj";
 
-         for Source_Dirs use ("../bsps/stm32f4/bsp",
+         for Source_Dirs use ("../bsps/lpc4337_educiaa/bsp",
                               "../base_runtimes/ravenscar-sfp/arch",
                               "../base_runtimes/ravenscar-sfp/common");
          for Runtime ("Ada") use Project'Project_Dir & "sfp";
@@ -31,7 +31,7 @@ project Runtime_Build is
          for Library_Dir use "full/adalib";
          for Object_Dir use "full/obj";
 
-         for Source_Dirs use ("../bsps/stm32f4/bsp",
+         for Source_Dirs use ("../bsps/lpc4337_educiaa/bsp",
                               "../base_runtimes/ravenscar-full/arch",
                               "../base_runtimes/ravenscar-full/common",
                               "../base_runtimes/ravenscar-full/math");
