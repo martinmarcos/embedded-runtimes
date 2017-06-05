@@ -26,283 +26,464 @@ pragma Suppress (All_Checks);
 --  This initialization procedure mainly initializes the PLLs and
 --  all derived clocks.
 
-with Ada.Unchecked_Conversion;
+--  with Ada.Unchecked_Conversion;
 
-with Interfaces.Bit_Types;       use Interfaces, Interfaces.Bit_Types;
-with Interfaces.STM32.FLASH;     use Interfaces.STM32.FLASH;
-with Interfaces.STM32.PWR;       use Interfaces.STM32.PWR;
-with Interfaces.STM32.RCC;       use Interfaces.STM32.RCC;
+with Interfaces.LPC4337;           use Interfaces.LPC4337;
+with Interfaces.LPC4337.CREG;      use Interfaces.LPC4337.CREG;
+with Interfaces.LPC4337.CGU;       use Interfaces.LPC4337.CGU;
+with Interfaces.LPC4337.SCU;       use Interfaces.LPC4337.SCU;
+with Interfaces.LPC4337.GPIO_PORT; use Interfaces.LPC4337.GPIO_PORT;
 
-with System.BB.Parameters;       use System.BB.Parameters;
-with System.BB.MCU_Parameters;
 with System.BB.Board_Parameters; use System.BB.Board_Parameters;
-with System.STM32;               use System.STM32;
+with System.LPC43;               use System.LPC43;
 
 procedure Setup_Pll is
-   procedure Initialize_Clocks;
-   procedure Reset_Clocks;
+
+   BYPASS        : constant PLL1_CTRL_ENUM_1 := Normal;
+   CLK_SEL       : constant PLL1_CTRL_ENUM_6 := Crystal_Oscillator;
+
+   FBSEL         : constant PLL1_CTRL_ENUM_2 := Cco_Out;
+   DIRECT        : constant PLL1_CTRL_ENUM_3 := Enabled;
+   PSEL_Val      : constant Integer := 1;
+   NSEL_Val      : constant Integer := 1;
+   MSEL_Val      : constant Integer := 17;
+
+   MIDFREQ_FBSEL    : constant PLL1_CTRL_ENUM_2 := Cco_Out;
+   MIDFREQ_DIRECT   : constant PLL1_CTRL_ENUM_3 := Disabled;
+   MIDFREQ_PSEL_Val : constant Integer := 1;
+   MIDFREQ_NSEL_Val : constant Integer := 1;
+   MIDFREQ_MSEL_Val : constant Integer := 17;
+
+   procedure Setup_Muxing;
+   procedure Setup_Flash_Acceleration;
+   procedure Enable_Crystal;
+   procedure Setup_Core_Clock;
+   procedure Setup_Clock_Bases;
+
+   procedure Setup_Muxing is
+   begin
+
+      SCU_Periph.SFSP2 (0).EPUN := Disable_Pull_Up;
+      SCU_Periph.SFSP2 (0).EPD := Enable_Pull_Down;
+      SCU_Periph.SFSP2 (0).EZI := Enable_Input_Buffer;
+      SCU_Periph.SFSP2 (0).MODE := Function_4;
+
+      SCU_Periph.SFSP2 (1).EPUN := Disable_Pull_Up;
+      SCU_Periph.SFSP2 (1).EPD := Enable_Pull_Down;
+      SCU_Periph.SFSP2 (1).EZI := Enable_Input_Buffer;
+      SCU_Periph.SFSP2 (1).MODE := Function_4;
+
+      SCU_Periph.SFSP2 (2).EPUN := Disable_Pull_Up;
+      SCU_Periph.SFSP2 (2).EPD := Enable_Pull_Down;
+      SCU_Periph.SFSP2 (2).EZI := Enable_Input_Buffer;
+      SCU_Periph.SFSP2 (2).MODE := Function_4;
+
+      SCU_Periph.SFSP2_2 (4).EPUN := Disable_Pull_Up;
+      SCU_Periph.SFSP2_2 (4).EPD := Enable_Pull_Down;
+      SCU_Periph.SFSP2_2 (4).EZI := Enable_Input_Buffer;
+      SCU_Periph.SFSP2_2 (4).MODE := Function_0_Default;
+
+      SCU_Periph.SFSP2_2 (5).EPUN := Disable_Pull_Up;
+      SCU_Periph.SFSP2_2 (5).EPD := Enable_Pull_Down;
+      SCU_Periph.SFSP2_2 (5).EZI := Enable_Input_Buffer;
+      SCU_Periph.SFSP2_2 (5).MODE := Function_0_Default;
+
+      SCU_Periph.SFSP2_2 (6).EPUN := Disable_Pull_Up;
+      SCU_Periph.SFSP2_2 (6).EPD := Enable_Pull_Down;
+      SCU_Periph.SFSP2_2 (6).EZI := Enable_Input_Buffer;
+      SCU_Periph.SFSP2_2 (6).MODE := Function_0_Default;
+
+   end Setup_Muxing;
 
    ------------------------------
-   -- Clock Tree Configuration --
+   -- Setup Flash Acceleration --
    ------------------------------
 
-   HSE_Enabled     : constant Boolean := True;  -- use high-speed ext. clock
-   HSE_Bypass      : constant Boolean := False; -- don't bypass ext. resonator
-   LSI_Enabled     : constant Boolean := True;  -- use low-speed internal clock
+   procedure Setup_Flash_Acceleration is
+      FLASHTIM_A : constant FLASHCFGA_ENUM :=
+              (case Flash_Access_Time is
+                   when 0 => FLASHCFGA_ENUM_1_Base_M4_Clk_Clock,
+                   when 1 => FLASHCFGA_ENUM_2_Base_M4_Clk_Clocks,
+                   when 2 => FLASHCFGA_ENUM_3_Base_M4_Clk_Clocks,
+                   when 3 => FLASHCFGA_ENUM_4_Base_M4_Clk_Clocks,
+                   when 4 => FLASHCFGA_ENUM_5_Base_M4_Clk_Clocks,
+                   when 5 => FLASHCFGA_ENUM_6_Base_M4_Clk_Clocks,
+                   when 6 => FLASHCFGA_ENUM_7_Base_M4_Clk_Clocks,
+                   when 7 => FLASHCFGA_ENUM_8_Base_M4_Clk_Clocks,
+                   when 8 => FLASHCFGA_ENUM_9_Base_M4_Clk_Clocks,
+                   when others => FLASHCFGA_ENUM_10_Base_M4_Clk_Clock
+              );
+      FLASHTIM_B : constant FLASHCFGB_ENUM :=
+              (case Flash_Access_Time is
+                   when 0 => FLASHCFGB_ENUM_1_Base_M4_Clk_Clock,
+                   when 1 => FLASHCFGB_ENUM_2_Base_M4_Clk_Clocks,
+                   when 2 => FLASHCFGB_ENUM_3_Base_M4_Clk_Clocks,
+                   when 3 => FLASHCFGB_ENUM_4_Base_M4_Clk_Clocks,
+                   when 4 => FLASHCFGB_ENUM_5_Base_M4_Clk_Clocks,
+                   when 5 => FLASHCFGB_ENUM_6_Base_M4_Clk_Clocks,
+                   when 6 => FLASHCFGB_ENUM_7_Base_M4_Clk_Clocks,
+                   when 7 => FLASHCFGB_ENUM_8_Base_M4_Clk_Clocks,
+                   when 8 => FLASHCFGB_ENUM_9_Base_M4_Clk_Clocks,
+                   when others => FLASHCFGB_ENUM_10_Base_M4_Clk_Clock
+              );
+   begin
 
-   Activate_PLL       : constant Boolean := True;
-   Activate_Overdrive : constant Boolean := True;
-   Activate_PLLI2S    : constant Boolean := False;
+      CREG_Periph.FLASHCFGA.FLASHTIM := FLASHTIM_A;
+      CREG_Periph.FLASHCFGB.FLASHTIM := FLASHTIM_B;
 
-   pragma Compile_Time_Error (not (if Activate_PLL then HSE_Enabled),
-                              "PLL only supported with external clock");
+   end Setup_Flash_Acceleration;
 
-   pragma Compile_Time_Error (Activate_PLLI2S, "not yet implemented");
+   XTAL_Enabled  : constant Boolean := (if CLK_SEL = Crystal_Oscillator then
+                                            True else False);
 
-   -----------------------
-   -- Initialize_Clocks --
-   -----------------------
+   --------------------
+   -- Enable_Crystal --
+   --------------------
 
-   procedure Initialize_Clocks
-   is
+   procedure Enable_Crystal is
+      delay_ticks : Integer := 1000;
+      HF : constant XTAL_OSC_CTRL_ENUM_2 :=
+                                    (if XTAL_Clock_Frequency > 20_000_000 then
+                                       High
+                                    else
+                                       Low);
+   begin
+
+      CGU_Periph.XTAL_OSC_CTRL.ENABLE := Enable;
+
+      CGU_Periph.XTAL_OSC_CTRL.BYPASS := Crystal;
+
+      CGU_Periph.XTAL_OSC_CTRL.HF := HF;
+
+      delay_loop :
+      while delay_ticks > 0 loop
+         delay_ticks := delay_ticks - 1;
+      end loop delay_loop;
+
+   end Enable_Crystal;
+
+   ----------------------
+   -- Setup_Core_Clock --
+   ----------------------
+
+   procedure Setup_Core_Clock is
+
       -------------------------------
       -- Compute Clock Frequencies --
       -------------------------------
 
-      PLLP_Value  : constant PLLP_Range := 2;
-      --  Arbitrary fixed to a convenient value
+      pragma Compile_Time_Error ((if Main_Clock_Frequency in SYSCLK_Range then
+                                 False), "System clock out of range");
 
-      PLLCLKIN    : constant Integer := 1_000_000;
-      PLLM_Value  : constant Integer  := HSE_Clock / PLLCLKIN;
-      --  First divider M is set to produce a 1Mhz clock
+      pragma Compile_Time_Error ((if CLK_SEL = Crystal_Oscillator or
+                                CLK_SEL = Irc_Default then False),
+                              "PLL1 clock-source not supported");
 
-      PLLN_Value  : constant Integer :=
-                      (PLLP_Value * Clock_Frequency) / PLLCLKIN;
-      --  Compute N to to generate the required frequency
+      pragma Compile_Time_Error ((if XTAL_Enabled and
+                            XTAL_Clock_Frequency in XTALCLK_Range then False),
+                            "Crystal oscillator out of range");
 
-      PLLVC0      : constant Integer := PLLCLKIN * PLLN_Value;
-      PLLCLKOUT   : constant Integer := PLLVC0 / PLLP_Value;
+      FCLKIN        : constant := (case CLK_SEL is
+                               when Crystal_Oscillator => XTAL_Clock_Frequency,
+                               when Irc_Default => IRCCLK,
+                               when others => IRCCLK);
 
-      PLLQ_Value  : constant PLLQ_Range := 7;
-      --  Arbitrary fixed
+      pragma Compile_Time_Error ((if FCLKIN in XTALCLK_Range then False),
+                            "PLL1 input frequency (FCLKIN) out of range");
 
-      PLLM        : constant UInt6 := UInt6 (PLLM_Value);
-      PLLN        : constant UInt9 := UInt9 (PLLN_Value);
-      PLLP        : constant UInt2 := UInt2 (PLLP_Value / 2 - 1);
-      PLLQ        : constant UInt4 := UInt4 (PLLQ_Value);
+      TwoStepRampUp : constant Boolean :=
+          (if Main_Clock_Frequency > 110_000_000 then True else False);
 
-      SW          : constant SYSCLK_Source :=
-                      (if Activate_PLL then SYSCLK_SRC_PLL
-                       else (if HSE_Enabled then SYSCLK_SRC_HSE
-                             else SYSCLK_SRC_HSI));
-      SW_Value    : constant CFGR_SW_Field :=
-                      SYSCLK_Source'Enum_Rep (SW);
+      pragma Compile_Time_Error ((if MSEL_Val in PLL1M_Range then False),
+                                 "PLL1 MSEL value out of range");
 
-      SYSCLK      : constant Integer := (if Activate_PLL
-                                         then PLLCLKOUT
-                                         else HSICLK);
+      pragma Compile_Time_Error ((if NSEL_Val in PLL1N_Range then False),
+                                 "Invalid PLL1 NSEL value");
 
-      HCLK        : constant Integer :=
-                      (if not AHB_PRE.Enabled
-                       then SYSCLK
-                       else
-                         (case AHB_PRE.Value is
-                             when DIV2   => SYSCLK / 2,
-                             when DIV4   => SYSCLK / 4,
-                             when DIV8   => SYSCLK / 8,
-                             when DIV16  => SYSCLK / 16,
-                             when DIV64  => SYSCLK / 64,
-                             when DIV128 => SYSCLK / 128,
-                             when DIV256 => SYSCLK / 256,
-                             when DIV512 => SYSCLK / 512));
-      PCLK1       : constant Integer :=
-                      (if not APB1_PRE.Enabled
-                       then HCLK
-                       else
-                         (case APB1_PRE.Value is
-                             when DIV2  => HCLK / 2,
-                             when DIV4  => HCLK / 4,
-                             when DIV8  => HCLK / 8,
-                             when DIV16 => HCLK / 16));
-      PCLK2       : constant Integer :=
-                      (if not APB2_PRE.Enabled
-                       then HCLK
-                       else
-                         (case APB2_PRE.Value is
-                             when DIV2  => HCLK / 2,
-                             when DIV4  => HCLK / 4,
-                             when DIV8  => HCLK / 8,
-                             when DIV16 => HCLK / 16));
+      pragma Compile_Time_Error ((if PSEL_Val in PLL1P_Range then False),
+                                 "Invalid PLL1 PSEL value");
 
-      function To_AHB is new Ada.Unchecked_Conversion
-        (AHB_Prescaler, UInt4);
-      function To_APB is new Ada.Unchecked_Conversion
-        (APB_Prescaler, UInt3);
+      FCCO : constant Integer :=
+                   (if FBSEL = Pll_Out and DIRECT = Disabled then
+                        2 * PSEL_Val * MSEL_Val * FCLKIN / NSEL_Val
+                    else
+                        MSEL_Val * FCLKIN / NSEL_Val);
+
+      pragma Compile_Time_Error ((if FCCO in PLL1CCO_Range then False),
+           "PLL1 current controlled oscillator frequency (FCCO) out of range");
+
+      FCLKOU : constant Integer :=
+                   (if FBSEL = Pll_Out or DIRECT = Enabled then
+                        MSEL_Val * FCLKIN / NSEL_Val
+                    else
+                        MSEL_Val * FCLKIN / (2 * PSEL_Val * NSEL_Val));
+
+      pragma Compile_Time_Error ((if FCLKOU in PLL1CLKOU_Range then False),
+                            "PLL1 output frequency (FCLKOU) out of range");
+
+      pragma Compile_Time_Error ((if FCLKOU = Main_Clock_Frequency then False),
+                                 "PLL1 output frequency (FCLKOU) does not " &
+                                  "match desired System Clock frequency");
+
+      PSEL : constant PLL1_CTRL_ENUM_4 := (case PSEL_Val is
+                                           when 1 => PLL1_CTRL_ENUM_1_1,
+                                           when 2 => Peq2,
+                                           when 4 => Peq4,
+                                           when 8 => PLL1_CTRL_ENUM_8,
+                                           when others => PLL1_CTRL_ENUM_1_1);
+
+      NSEL : constant PLL1_CTRL_ENUM_5 := (case NSEL_Val is
+                                           when 1 => PLL1_CTRL_ENUM_1_1,
+                                           when 2 => Neq2,
+                                           when 3 => Neq3,
+                                           when 4 => PLL1_CTRL_ENUM_4_1,
+                                           when others => PLL1_CTRL_ENUM_4_1);
+
+      MSEL : constant PLL1_CTRL_MSEL_Field := Byte (MSEL_Val);
+
+      delay_ticks : Integer := 500;
 
    begin
 
-      --  Check configuration
-      pragma Compile_Time_Error
-        (PLLVC0 not in PLLVC0_Range or else PLLCLKOUT not in PLLOUT_Range,
-           "Invalid clock configuration");
+      --  Switch System Clock source to PLL1 clock source
+      CGU_Periph.BASE_M4_CLK.AUTOBLOCK := Enabled;
+      CGU_Periph.BASE_M4_CLK.CLK_SEL := (case CLK_SEL is
+                                when Crystal_Oscillator => Crystal_Oscillator,
+                                when Irc_Default => Irc_Default,
+                                when others => Irc_Default);
 
-      pragma Compile_Time_Error
-        (SYSCLK /= Clock_Frequency,
-           "Cannot generate requested clock");
+      --  Power down PLL1
+      CGU_Periph.PLL1_CTRL.PD := Pll1_Powered_Down;
+      CGU_Periph.PLL1_CTRL.BYPASS := BYPASS;
+      CGU_Periph.PLL1_CTRL.AUTOBLOCK := Disabled;
+      CGU_Periph.PLL1_CTRL.CLK_SEL := CLK_SEL;
 
-      pragma Compile_Time_Error
-        (HCLK not in HCLK_Range
-           or else PCLK1 not in PCLK1_Range
-           or else PCLK2 not in PCLK2_Range,
-           "Invalid AHB/APB prescalers configuration");
+      --  If System Clock is greater than 110MHz then a two step frequency
+      --  ramp up must be performed
+      if TwoStepRampUp then
+         pragma Warnings (Off, "condition is always False");
+         if DIRECT = Disabled or not (PSEL_Val = 1) then
+            pragma Warnings (On, "condition is always False");
+            declare
 
-      --  PWR clock enable
+               pragma Warnings (Off, "condition is always True");
+               pragma Compile_Time_Error ((if MIDFREQ_MSEL_Val in PLL1M_Range
+                       then False), "Mid-frequency MSEL value out of range");
 
-      RCC_Periph.APB1ENR.PWREN := 1;
+               pragma Compile_Time_Error ((if MIDFREQ_NSEL_Val in PLL1N_Range
+                            then False), "Invalid mid-frequency NSEL value");
 
-      --  Reset the power interface
-      RCC_Periph.APB1RSTR.PWRRST := 1;
-      RCC_Periph.APB1RSTR.PWRRST := 0;
+               pragma Compile_Time_Error ((if MIDFREQ_PSEL_Val in PLL1P_Range
+                            then False), "Invalid mid-frequency PSEL value");
+               pragma Warnings (On, "condition is always True");
 
-      --  PWR initialization
-      --  Select higher supply power for stable operation at max. freq.
-      --  See table "General operating conditions" of the STM32 datasheets
-      --  to obtain the maximal operating frequency depending on the power
-      --  scaling mode and the over-drive mode
+               MIDFREQ_FCCO : constant Integer :=
+                          (if MIDFREQ_FBSEL = Pll_Out and
+                             MIDFREQ_DIRECT = Disabled then
+                             2 * MIDFREQ_PSEL_Val * MIDFREQ_MSEL_Val * FCLKIN
+                                                           / MIDFREQ_NSEL_Val
+                           else
+                              MIDFREQ_MSEL_Val * FCLKIN / MIDFREQ_NSEL_Val);
 
-      System.BB.MCU_Parameters.PWR_Initialize;
+               pragma Warnings (Off, "condition is always True");
+               pragma Compile_Time_Error ((if MIDFREQ_FCCO in PLL1CCO_Range
+                      then False), "Mid-frequency PLL1 FCCO out of range");
+               pragma Warnings (On, "condition is always True");
 
-      if not HSE_Enabled then
-         --  Setup internal clock and wait for HSI stabilisation.
+               MIDFREQ_FCLKOU : constant Integer :=
+                  (if MIDFREQ_FBSEL = Pll_Out or MIDFREQ_DIRECT = Enabled then
+                        MIDFREQ_MSEL_Val * FCLKIN / MIDFREQ_NSEL_Val
+                    else
+                        MIDFREQ_MSEL_Val * FCLKIN /
+                                   (2 * MIDFREQ_PSEL_Val * MIDFREQ_NSEL_Val));
 
-         RCC_Periph.CR.HSION := 1;
+               pragma Warnings (Off, "condition is always True");
+               pragma Compile_Time_Error ((if MIDFREQ_FCLKOU in MIDFREQ_Range
+                      then False), "Mid-frequency PLL1 FCLKOU out of range");
+               pragma Warnings (On, "condition is always True");
 
-         loop
-            exit when RCC_Periph.CR.HSIRDY = 1;
-         end loop;
+               MIDFREQ_PSEL : constant PLL1_CTRL_ENUM_4 :=
+                                      (case MIDFREQ_PSEL_Val is
+                                           when 1 => PLL1_CTRL_ENUM_1_1,
+                                           when 2 => Peq2,
+                                           when 4 => Peq4,
+                                           when 8 => PLL1_CTRL_ENUM_8,
+                                           when others => PLL1_CTRL_ENUM_1_1);
 
+               MIDFREQ_NSEL : constant PLL1_CTRL_ENUM_5 :=
+                                      (case MIDFREQ_NSEL_Val is
+                                           when 1 => PLL1_CTRL_ENUM_1_1,
+                                           when 2 => Neq2,
+                                           when 3 => Neq3,
+                                           when 4 => PLL1_CTRL_ENUM_4_1,
+                                           when others => PLL1_CTRL_ENUM_4_1);
+
+               MIDFREQ_MSEL : constant PLL1_CTRL_MSEL_Field := Byte (MSEL_Val);
+
+            begin
+
+               --  Configure mid-frequency parameters and start PLL1
+               CGU_Periph.PLL1_CTRL.DIRECT := MIDFREQ_DIRECT;
+               CGU_Periph.PLL1_CTRL.FBSEL := MIDFREQ_FBSEL;
+               CGU_Periph.PLL1_CTRL.PSEL :=  MIDFREQ_PSEL;
+               CGU_Periph.PLL1_CTRL.NSEL :=  MIDFREQ_NSEL;
+               CGU_Periph.PLL1_CTRL.MSEL :=  MIDFREQ_MSEL;
+               CGU_Periph.PLL1_CTRL.PD := Pll1_Enabled;
+
+               --  Wait for PLL1 to lock to mid-frequency clock
+               loop
+                  exit when CGU_Periph.PLL1_STAT.LOCK = 1;
+               end loop;
+
+               --  Switch System Clock source to PLL1 output
+               CGU_Periph.BASE_M4_CLK.AUTOBLOCK := Enabled;
+               CGU_Periph.BASE_M4_CLK.CLK_SEL := Pll1;
+
+               --  Wait for approx 50 uSec
+               while delay_ticks > 0 loop
+                  delay_ticks := delay_ticks - 1;
+               end loop;
+               delay_ticks := 500;
+
+            end;
+         else
+            CGU_Periph.PLL1_CTRL.DIRECT := Disabled;
+         end if;
       else
-         --  Configure high-speed external clock, if enabled
-
-         RCC_Periph.CR.HSEON := 1;
-         RCC_Periph.CR.HSEBYP := (if HSE_Bypass then 1 else 0);
-
-         loop
-            exit when RCC_Periph.CR.HSERDY = 1;
-         end loop;
+         CGU_Periph.PLL1_CTRL.DIRECT := DIRECT;
       end if;
 
-      --  Configure low-speed internal clock if enabled
+      --  Configure parameters and start PLL1
+      CGU_Periph.PLL1_CTRL.FBSEL := FBSEL;
+      CGU_Periph.PLL1_CTRL.PSEL := PSEL;
+      CGU_Periph.PLL1_CTRL.NSEL := NSEL;
+      CGU_Periph.PLL1_CTRL.MSEL := MSEL;
+      CGU_Periph.PLL1_CTRL.PD := Pll1_Enabled;
 
-      if LSI_Enabled then
-         RCC_Periph.CSR.LSION := 1;
+      --  Wait for PLL1 to lock
+      loop
+         exit when CGU_Periph.PLL1_STAT.LOCK = 1;
+      end loop;
 
-         loop
-            exit when RCC_Periph.CSR.LSIRDY = 1;
-         end loop;
-      end if;
+      --  Switch System Clock source to PLL1 output
+      CGU_Periph.BASE_M4_CLK.AUTOBLOCK := Enabled;
+      CGU_Periph.BASE_M4_CLK.CLK_SEL := Pll1;
 
-      --  Activate PLL if enabled
-      if Activate_PLL then
-         --  Disable the main PLL before configuring it
-         RCC_Periph.CR.PLLON := 0;
+      --  Wait for approx 50 uSec
+      while delay_ticks > 0 loop
+         delay_ticks := delay_ticks - 1;
+      end loop;
 
-         --  Configure the PLL clock source, multiplication and division
-         --  factors
-         RCC_Periph.PLLCFGR :=
-           (PLLM   => PLLM,
-            PLLN   => PLLN,
-            PLLP   => PLLP,
-            PLLQ   => PLLQ,
-            PLLSRC => (if HSE_Enabled
-                       then PLL_Source'Enum_Rep (PLL_SRC_HSE)
-                       else PLL_Source'Enum_Rep (PLL_SRC_HSI)),
-            others => <>);
+      --  If performing a two step frequency ramp up and DIRECT must be
+      --  enabled to operate at full frequency then enable it
+      pragma Warnings (Off, "condition is always True");
+      if TwoStepRampUp and DIRECT = Enabled then
+         pragma Warnings (On, "condition is always True");
 
-         RCC_Periph.CR.PLLON := 1;
-         loop
-            exit when RCC_Periph.CR.PLLRDY = 1;
-         end loop;
-      end if;
+         CGU_Periph.PLL1_CTRL.DIRECT := Enabled;
 
-      --  Configure OverDrive mode
-      if Activate_Overdrive then
-         System.BB.MCU_Parameters.PWR_Overdrive_Enable;
-      end if;
-
-      --  Configure flash
-      --  Must be done before increasing the frequency, otherwise the CPU
-      --  won't be able to fetch new instructions.
-
-      FLASH_Periph.ACR.ICEN := 0;
-      FLASH_Periph.ACR.DCEN := 0;
-      FLASH_Periph.ACR.ICRST := 1;
-      FLASH_Periph.ACR.DCRST := 1;
-      FLASH_Periph.ACR :=
-        (LATENCY => FLASH_Latency,
-         ICEN    => 1,
-         DCEN    => 1,
-         PRFTEN  => 1,
-         others  => <>);
-
-      --  Configure derived clocks
-
-      RCC_Periph.CFGR :=
-        (SW      => SW_Value,
-         HPRE    => To_AHB (AHB_PRE),
-         PPRE    => (As_Array => True,
-                     Arr      => (1 => To_APB (APB1_PRE),
-                                  2 => To_APB (APB2_PRE))),
-         RTCPRE  => 16#0#,
-         I2SSRC  => I2S_Clock_Selection'Enum_Rep (I2SSEL_PLL),
-         MCO1    => MC01_Clock_Selection'Enum_Rep (MC01SEL_HSI),
-         MCO1PRE => MC0x_Prescaler'Enum_Rep (MC0xPRE_DIV1),
-         MCO2    => MC02_Clock_Selection'Enum_Rep (MC02SEL_SYSCLK),
-         MCO2PRE => MC0x_Prescaler'Enum_Rep (MC0xPRE_DIV5),
-         others  => <>);
-
-      if Activate_PLL then
-         loop
-            exit when RCC_Periph.CFGR.SWS =
-              SYSCLK_Source'Enum_Rep (SYSCLK_SRC_PLL);
+         --  Wait for approx 50 uSec
+         delay_ticks := 500;
+         while delay_ticks > 0 loop
+            delay_ticks := delay_ticks - 1;
          end loop;
 
-         --  Wait until voltage supply scaling has completed
-
-         loop
-            exit when System.BB.MCU_Parameters.Is_PWR_Stabilized;
-         end loop;
       end if;
-   end Initialize_Clocks;
 
-   ------------------
-   -- Reset_Clocks --
-   ------------------
+   end Setup_Core_Clock;
 
-   procedure Reset_Clocks is
+   procedure Setup_Clock_Bases is
    begin
-      --  Switch on high speed internal clock
-      RCC_Periph.CR.HSION := 1;
 
-      --  Reset CFGR regiser
-      RCC_Periph.CFGR := (others => <>);
+      CGU_Periph.BASE_SAFE_CLK.AUTOBLOCK := Enabled;
+      CGU_Periph.BASE_SAFE_CLK.CLK_SEL := Irc_Default;
+      CGU_Periph.BASE_SAFE_CLK.PD := Power_Down;
 
-      --  Reset HSEON, CSSON and PLLON bits
-      RCC_Periph.CR.HSEON := 0;
-      RCC_Periph.CR.CSSON := 0;
-      RCC_Periph.CR.PLLON := 0;
+      CGU_Periph.BASE_APB1_CLK.AUTOBLOCK := Enabled;
+      CGU_Periph.BASE_APB1_CLK.CLK_SEL := Pll1;
+      CGU_Periph.BASE_APB1_CLK.PD := Power_Down;
 
-      --  Reset PLL configuration register
-      RCC_Periph.PLLCFGR := (others => <>);
+      CGU_Periph.BASE_APB3_CLK.AUTOBLOCK := Enabled;
+      CGU_Periph.BASE_APB3_CLK.CLK_SEL := Pll1;
+      CGU_Periph.BASE_APB3_CLK.PD := Power_Down;
 
-      --  Reset HSE bypass bit
-      RCC_Periph.CR.HSEBYP := 0;
+      CGU_Periph.BASE_USB0_CLK.AUTOBLOCK := Enabled;
+      CGU_Periph.BASE_USB0_CLK.CLK_SEL := Pll0Usb;
+      CGU_Periph.BASE_USB0_CLK.PD := Enabled;
 
-      --  Disable all interrupts
-      RCC_Periph.CIR := (others => <>);
-   end Reset_Clocks;
+      CGU_Periph.BASE_PERIPH_CLK.AUTOBLOCK := Enabled;
+      CGU_Periph.BASE_PERIPH_CLK.CLK_SEL := Pll1;
+      CGU_Periph.BASE_PERIPH_CLK.PD := Power_Down;
 
+      CGU_Periph.BASE_SPI_CLK.AUTOBLOCK := Enabled;
+      CGU_Periph.BASE_SPI_CLK.CLK_SEL := Pll1;
+      CGU_Periph.BASE_SPI_CLK.PD := Power_Down;
+
+      CGU_Periph.BASE_SDIO_CLK.AUTOBLOCK := Enabled;
+      CGU_Periph.BASE_SDIO_CLK.CLK_SEL := Pll1;
+      CGU_Periph.BASE_SDIO_CLK.PD := Power_Down;
+
+      CGU_Periph.BASE_SSP0_CLK.AUTOBLOCK := Enabled;
+      CGU_Periph.BASE_SSP0_CLK.CLK_SEL := Pll1;
+      CGU_Periph.BASE_SSP0_CLK.PD := Power_Down;
+
+      CGU_Periph.BASE_SSP1_CLK.AUTOBLOCK := Enabled;
+      CGU_Periph.BASE_SSP1_CLK.CLK_SEL := Pll1;
+      CGU_Periph.BASE_SSP1_CLK.PD := Power_Down;
+
+      CGU_Periph.BASE_UART0_CLK.AUTOBLOCK := Enabled;
+      CGU_Periph.BASE_UART0_CLK.CLK_SEL := Pll1;
+      CGU_Periph.BASE_UART0_CLK.PD := Power_Down;
+
+      CGU_Periph.BASE_UART1_CLK.AUTOBLOCK := Enabled;
+      CGU_Periph.BASE_UART1_CLK.CLK_SEL := Pll1;
+      CGU_Periph.BASE_UART1_CLK.PD := Power_Down;
+
+      CGU_Periph.BASE_UART2_CLK.AUTOBLOCK := Enabled;
+      CGU_Periph.BASE_UART2_CLK.CLK_SEL := Pll1;
+      CGU_Periph.BASE_UART2_CLK.PD := Output_Stage_Enabled;
+
+      CGU_Periph.BASE_UART3_CLK.AUTOBLOCK := Enabled;
+      CGU_Periph.BASE_UART3_CLK.CLK_SEL := Pll1;
+      CGU_Periph.BASE_UART3_CLK.PD := Power_Down;
+
+      CGU_Periph.BASE_OUT_CLK.AUTOBLOCK := Autoblocking_Enabled;
+      CGU_Periph.BASE_OUT_CLK.PD := Power_Down;
+
+      CGU_Periph.BASE_AUDIO_CLK.AUTOBLOCK := Autoblocking_Enabled;
+      CGU_Periph.BASE_AUDIO_CLK.PD := Power_Down;
+
+      CGU_Periph.BASE_CGU_OUT0_CLK.AUTOBLOCK := Autoblocking_Enabled;
+      CGU_Periph.BASE_CGU_OUT0_CLK.PD := Power_Down;
+
+      CGU_Periph.BASE_CGU_OUT1_CLK.AUTOBLOCK := Autoblocking_Enabled;
+      CGU_Periph.BASE_CGU_OUT1_CLK.PD := Power_Down;
+
+      CGU_Periph.BASE_PHY_TX_CLK.AUTOBLOCK := Enabled;
+      CGU_Periph.BASE_PHY_TX_CLK.CLK_SEL := Enet_Tx_Clk;
+      CGU_Periph.BASE_PHY_TX_CLK.PD := Power_Down;
+
+      CGU_Periph.BASE_PHY_RX_CLK.AUTOBLOCK := Enabled;
+      CGU_Periph.BASE_PHY_RX_CLK.CLK_SEL := Enet_Tx_Clk;
+      CGU_Periph.BASE_PHY_RX_CLK.PD := Power_Down;
+
+   end Setup_Clock_Bases;
 begin
-   Reset_Clocks;
-   Initialize_Clocks;
+
+   Setup_Muxing;
+   Setup_Flash_Acceleration;
+
+   if XTAL_Enabled then
+      Enable_Crystal;
+   end if;
+
+   Setup_Core_Clock;
+   Setup_Clock_Bases;
+
+   --  Reset and Enable 32Khz oscillator
+   CREG_Periph.CREG0.RESET32KHZ := Clear_Reset;
+   CREG_Periph.CREG0.PD32KHZ := Powered;
+   CREG_Periph.CREG0.EN1KHZ := CREG0_ENUM_1_Khz_Output_Enabled;
+   CREG_Periph.CREG0.EN32KHZ := CREG0_ENUM_32_Khz_Output_Enable;
+
 end Setup_Pll;
