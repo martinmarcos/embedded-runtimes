@@ -20,7 +20,7 @@ package Ada.Interrupts.Names is
    DAC_Interrupt          : constant Interrupt_ID := 2;
    M0APP_Interrupt        : constant Interrupt_ID := 3;
    DMA_Interrupt          : constant Interrupt_ID := 4;
-   Reserved_Interrupt     : constant Interrupt_ID := 5;
+   Reserved_Interrupt_1   : constant Interrupt_ID := 5;
    FLASH_Interrupt        : constant Interrupt_ID := 6;
    ETHERNET_Interrupt     : constant Interrupt_ID := 7;
    SDIO_Interrupt         : constant Interrupt_ID := 8;
@@ -61,11 +61,11 @@ package Ada.Interrupts.Names is
    GINT1_Interrupt        : constant Interrupt_ID := 43;
    EVENTROUTER_Interrupt  : constant Interrupt_ID := 44;
    C_CAN1_Interrupt       : constant Interrupt_ID := 45;
-   Reserved_Interrupt     : constant Interrupt_ID := 46;
+   Reserved_Interrupt_2   : constant Interrupt_ID := 46;
    ADCHS_Interrupt        : constant Interrupt_ID := 47;
    ATIMER_Interrupt       : constant Interrupt_ID := 48;
    RTC_Interrupt          : constant Interrupt_ID := 49;
-   Reserved_Interrupt     : constant Interrupt_ID := 50;
+   Reserved_Interrupt_3   : constant Interrupt_ID := 50;
    WWDT_Interrupt         : constant Interrupt_ID := 51;
    M0SUB_Interrupt        : constant Interrupt_ID := 52;
    C_CAN0_Interrupt       : constant Interrupt_ID := 53;
