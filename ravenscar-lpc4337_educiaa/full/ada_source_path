@@ -1,7 +1,7 @@
-../../bsps/stm32f4/bsp
+../../bsps/lpc4337_educiaa/bsp
 ../../base_runtimes/ravenscar-full/arch
 ../../base_runtimes/ravenscar-full/common
 ../../base_runtimes/ravenscar-full/math
-../../bsps/stm32f4/gnarl-bsp
+../../bsps/lpc4337_educiaa/gnarl-bsp
 ../../base_runtimes/ravenscar-full/gnarl-common
-../../base_runtimes/ravenscar-full/gnarl-arch-stm32
+../../base_runtimes/ravenscar-full/gnarl-arch-lpc43

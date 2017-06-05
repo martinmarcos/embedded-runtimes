@@ -42,7 +42,7 @@ _start_ram:
 	ldr	sp,.LinitSp
 
         /* Enable FPU and cache when appropriate */
-        bl _stm32_start_common
+        bl _lpc43_start_common
 
 	/* Clear .bss */
 	movw	r0,#:lower16:__bss_start
