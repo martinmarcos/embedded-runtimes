@@ -31,10 +31,8 @@
 
 --  This package defines basic parameters used by the low level tasking system
 
---  This is the STM32F40x (ARMv7) version of this package
+--  This is the LPC43xx (ARMv7) version of this package
 
-with Interfaces.STM32.RCC;
-with System.STM32;
 with System.BB.Board_Parameters;
 with System.BB.MCU_Parameters;
 
@@ -43,36 +41,7 @@ package System.BB.Parameters is
    pragma No_Elaboration_Code_All;
 
    Clock_Frequency : constant := Board_Parameters.Main_Clock_Frequency;
-   pragma Compile_Time_Error
-     (Clock_Frequency not in System.STM32.SYSCLK_Range,
-        "bad Clock_Frequency value");
    Ticks_Per_Second : constant := Clock_Frequency;
-
-   --  Set the requested SYSCLK frequency. Setup_Pll will try to set configure
-   --  PLL to match this value when possible or reset the board.
-
-   ----------------
-   -- Prescalers --
-   ----------------
-
-   AHB_PRE  : constant System.STM32.AHB_Prescaler := System.STM32.AHBPRE_DIV1;
-   APB1_PRE : constant System.STM32.APB_Prescaler :=
-                (Enabled => True, Value => System.STM32.DIV4);
-   APB2_PRE : constant System.STM32.APB_Prescaler :=
-                (Enabled => True, Value => System.STM32.DIV2);
-
-   --------------------
-   -- External Clock --
-   --------------------
-
-   --  The external clock can be specific for each board. We provide here
-   --  a value for the most common STM32 boards.
-   --  Change the value based on the external clock used on your specific
-   --  hardware.
-
-   HSE_Clock : constant := Board_Parameters.HSE_Clock_Frequency;
-
-   HSI_Clock : constant := 16_000_000;
 
    Has_FPU : constant Boolean := True;
    --  Set to true if core has a FPU
