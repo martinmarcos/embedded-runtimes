@@ -35,9 +35,11 @@ MEMORY
   local_sram_32k (rwx) 		: ORIGIN = 0x10000000, LENGTH = 32K
   local_sram_40k (rwx) 		: ORIGIN = 0x10080000, LENGTH = 40K
   ahb_sram_64k (rwx)		: ORIGIN = 0x20000000, LENGTH = 64K
-  //ahb_sram_32k (rwx) 		: ORIGIN = 0x20000000, LENGTH = 32K
-  //ahb_sram_16k (rwx) 		: ORIGIN = 0x20008000, LENGTH = 16K
-  //ahb_sram_etb_16k (rwx)	: ORIGIN = 0x2000C000, LENGTH = 16K
+  /*
+  ahb_sram_32k (rwx) 		: ORIGIN = 0x20000000, LENGTH = 32K
+  ahb_sram_16k (rwx) 		: ORIGIN = 0x20008000, LENGTH = 16K
+  ahb_sram_etb_16k (rwx)	: ORIGIN = 0x2000C000, LENGTH = 16K
+  */
 }
 
 REGION_ALIAS("flash_tx", flash_bank_a)
