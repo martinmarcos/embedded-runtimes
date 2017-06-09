@@ -35,6 +35,17 @@ __vectors0:
 	.word   hang        /* 2 NMI */
 	.word   hang        /* 3 HardFault */
 	.word   hang        /* 4 MemManage */
+	.word   hang        /* 5 Bus fault. */
+	.word   hang        /* 6 Usage fault. */
+	.word   hang        /* 7 reserved. */
+	.word   hang        /* 8 reserved. */
+	.word   hang        /* 9 reserved. */
+	.word   hang        /* 10 reserved. */
+	.word   hang        /* 11 SVCall. */
+	.word   hang        /* 12 Breakpoint. */
+	.word   hang        /* 13 reserved. */
+	.word   hang        /* 14 PendSV. */
+	.word   hang        /* 15 Systick. */
 
 	.text
 
