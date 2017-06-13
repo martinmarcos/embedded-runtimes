@@ -106,8 +106,8 @@ package body System.Text_IO is
       USART2_Periph.DLM.DLMSB := 0;
       USART2_Periph.LCR.DLAB := Disabled;
 
-      USART2_Periph.FDR.MULVAL := 5;
-      USART2_Periph.FDR.DIVADDVAL := 15;
+      USART2_Periph.FDR.MULVAL := 15;
+      USART2_Periph.FDR.DIVADDVAL := 5;
 
       USART2_Periph.TER.TXEN := 1;
 
