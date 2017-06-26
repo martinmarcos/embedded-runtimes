@@ -79,7 +79,7 @@ package body System.Text_IO is
       USART2_Periph.IER.ABTOINTEN := Disable;
 
       USART2_Periph.LCR.WLS := LCR_ENUM_8_Bit_Character_Leng;
-      USART2_Periph.LCR.SBS := LCR_ENUM_1_Stop_Bit;
+      USART2_Periph.LCR.SBS := LCR_ENUM_2_Stop_Bits_1;
       USART2_Periph.LCR.PE := Disable_Parity_Gener;
       USART2_Periph.LCR.PS := Odd_Parity;
       USART2_Periph.LCR.BC := Disabled;
