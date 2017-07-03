@@ -63,35 +63,41 @@ procedure Setup_Pll is
    procedure Setup_Muxing is
    begin
 
-      SCU_Periph.SFSP2 (0).EPUN := Disable_Pull_Up;
-      SCU_Periph.SFSP2 (0).EPD := Enable_Pull_Down;
-      SCU_Periph.SFSP2 (0).EZI := Enable_Input_Buffer;
-      SCU_Periph.SFSP2 (0).MODE := Function_4;
+      --  LED0_R
+      SCU_Periph.SFSP2.Pins_0_2 (0).EPUN := Disable_Pull_Up;
+      SCU_Periph.SFSP2.Pins_0_2 (0).EPD := Enable_Pull_Down;
+      SCU_Periph.SFSP2.Pins_0_2 (0).EZI := Enable_Input_Buffer;
+      SCU_Periph.SFSP2.Pins_0_2 (0).MODE := Function_4;
 
-      SCU_Periph.SFSP2 (1).EPUN := Disable_Pull_Up;
-      SCU_Periph.SFSP2 (1).EPD := Enable_Pull_Down;
-      SCU_Periph.SFSP2 (1).EZI := Enable_Input_Buffer;
-      SCU_Periph.SFSP2 (1).MODE := Function_4;
+      --  LED0_G
+      SCU_Periph.SFSP2.Pins_0_2 (1).EPUN := Disable_Pull_Up;
+      SCU_Periph.SFSP2.Pins_0_2 (1).EPD := Enable_Pull_Down;
+      SCU_Periph.SFSP2.Pins_0_2 (1).EZI := Enable_Input_Buffer;
+      SCU_Periph.SFSP2.Pins_0_2 (1).MODE := Function_4;
 
-      SCU_Periph.SFSP2 (2).EPUN := Disable_Pull_Up;
-      SCU_Periph.SFSP2 (2).EPD := Enable_Pull_Down;
-      SCU_Periph.SFSP2 (2).EZI := Enable_Input_Buffer;
-      SCU_Periph.SFSP2 (2).MODE := Function_4;
+      --  LED0_B
+      SCU_Periph.SFSP2.Pins_0_2 (2).EPUN := Disable_Pull_Up;
+      SCU_Periph.SFSP2.Pins_0_2 (2).EPD := Enable_Pull_Down;
+      SCU_Periph.SFSP2.Pins_0_2 (2).EZI := Enable_Input_Buffer;
+      SCU_Periph.SFSP2.Pins_0_2 (2).MODE := Function_4;
 
-      SCU_Periph.SFSP2_2 (4).EPUN := Disable_Pull_Up;
-      SCU_Periph.SFSP2_2 (4).EPD := Enable_Pull_Down;
-      SCU_Periph.SFSP2_2 (4).EZI := Enable_Input_Buffer;
-      SCU_Periph.SFSP2_2 (4).MODE := Function_0_Default;
+      --  LED1
+      SCU_Periph.SFSP2.Pins_6_13 (10).EPUN := Disable_Pull_Up;
+      SCU_Periph.SFSP2.Pins_6_13 (10).EPD := Enable_Pull_Down;
+      SCU_Periph.SFSP2.Pins_6_13 (10).EZI := Enable_Input_Buffer;
+      SCU_Periph.SFSP2.Pins_6_13 (10).MODE := Function_0_Default;
 
-      SCU_Periph.SFSP2_2 (5).EPUN := Disable_Pull_Up;
-      SCU_Periph.SFSP2_2 (5).EPD := Enable_Pull_Down;
-      SCU_Periph.SFSP2_2 (5).EZI := Enable_Input_Buffer;
-      SCU_Periph.SFSP2_2 (5).MODE := Function_0_Default;
+      --  LED2
+      SCU_Periph.SFSP2.Pins_6_13 (11).EPUN := Disable_Pull_Up;
+      SCU_Periph.SFSP2.Pins_6_13 (11).EPD := Enable_Pull_Down;
+      SCU_Periph.SFSP2.Pins_6_13 (11).EZI := Enable_Input_Buffer;
+      SCU_Periph.SFSP2.Pins_6_13 (11).MODE := Function_0_Default;
 
-      SCU_Periph.SFSP2_2 (6).EPUN := Disable_Pull_Up;
-      SCU_Periph.SFSP2_2 (6).EPD := Enable_Pull_Down;
-      SCU_Periph.SFSP2_2 (6).EZI := Enable_Input_Buffer;
-      SCU_Periph.SFSP2_2 (6).MODE := Function_0_Default;
+      --  LED3
+      SCU_Periph.SFSP2.Pins_6_13 (12).EPUN := Disable_Pull_Up;
+      SCU_Periph.SFSP2.Pins_6_13 (12).EPD := Enable_Pull_Down;
+      SCU_Periph.SFSP2.Pins_6_13 (12).EZI := Enable_Input_Buffer;
+      SCU_Periph.SFSP2.Pins_6_13 (12).MODE := Function_0_Default;
 
    end Setup_Muxing;
 
