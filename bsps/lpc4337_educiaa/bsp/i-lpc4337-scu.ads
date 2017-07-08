@@ -201,13 +201,13 @@ package Interfaces.LPC4337.SCU is
    type SFS_Register_Access is access all SFS_Register;
 
    type Normal_Drive_Pins is array (Integer range <>)
-     of aliased SFS_Register(Normal_Drive) with Volatile;
+     of aliased SFS_Register(Normal_Drive);
 
    type High_Drive_Pins is array (Integer range <>)
-     of aliased SFS_Register(High_Drive) with Volatile;
+     of aliased SFS_Register(High_Drive);
 
    type High_Speed_Pins is array (Integer range <>)
-     of aliased SFS_Register(High_Speed) with Volatile;
+     of aliased SFS_Register(High_Speed);
 
    --  Pin configuration register for pins P0
    type SFSP0_Registers is array (0 .. 1) of aliased SFS_Register(Normal_Drive)
